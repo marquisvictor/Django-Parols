@@ -18,7 +18,7 @@ class SnippetSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
 
-        return Snippet.objects.create(**validated_data)
+        return snippet.objects.create(**validated_data)
 
     def update(self, instance, validated_data):
         instance.title = validated_data.get('title', instance.title)

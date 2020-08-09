@@ -1,49 +1,55 @@
-from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
-from rest_framework.parsers import JSONParser
+from rest_framework import status
+from rest_framework.views import APIView
+from rest_framework.response import Response
 from snippets.models import snippet
 from snippets.serializers import SnippetSerializer
-from django.http import HttpResponse, JsonResponse
+
 # Create your views here.
 
-@csrf_exempt
-def snippet_list(request):
-    """list all the snippets or create a new one"""
+class SnippetList(APIView):
+    """
+        still same functionality but in a class setting
 
-    if request.method == 'GET':
+        list all snippets or create a new one
+    """
+
+    def get(self, request, format=None):
         snippets = snippet.objects.all()
         serializer = SnippetSerializer(snippets, many=True)
-        return JsonResponse(serializer.data, safe=False)
+        return Response(serializer.data)
 
-    elif request.method == 'POST':
-        data = JSONParser().parse(request)
-        serializer = SnippetSerializer(data=data)
+    
+    def post(self, request, format=None):
+        serializer = SnippetSerializer(data=request.data)
+        if serializer.is_valid():
+            seriailizer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+       
+class SnippetDetail(APIView):
+
+    def get_object(self, pk):
+        try:
+            return snippet.objects.get(pk=pk)
+        except snippet.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+    def get(self, request, pk, format=None):
+        Snippet = self.get_object(pk)
+        serializer = SnippetSerializer(Snippet)
+        return Response(serializer.data)
+
+    def put(self, request, pk, format=None):
+        Snippet = self.get_object(pk)
+        serializer = SnippetSerializer(Snippet, data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return JsonResponse(serializer.data, status=201)
-        return JsonResponse(serializer.errors, status=400)
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@csrf_exempt
-def snippet_detail(request, pk):
-    """endpoint to view, update or delete a code snippet"""
-
-    try:
-        Snippet = snippet.objects.get(pk=pk)
-    except snippet.DoesNotExist:
-        return HttpResponse(status=404)
-
-    if request.method == 'GET':
-        serializer = SnippetSerializer(Snippet)
-        return JsonResponse(serializer.data)
-
-    if request.method == 'PUT':
-        data = JSONParser().parse(request)
-        serializer = SnippetSerializer(Snippet, data=data)
-        if serializer.is_valid():
-            return JsonResponse(serializer.data)  # come back here to see what happens with a staus http there like above. 
-        return JsonResponse(serializer.errors, status=400)
-
-    elif request.method == 'DELETE':
+    def delete(self, request, pk, format=None):
+        Snippet = self.get_object(pk)
         Snippet.delete()
-        return HttpResponse(status=204)
-
+        return Response(status=status.HTTP_204_NO_CONTENT)
