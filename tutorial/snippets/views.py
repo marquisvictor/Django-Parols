@@ -28,22 +28,22 @@ def snippet_detail(request, pk):
     """endpoint to view, update or delete a code snippet"""
 
     try:
-        snippet = Snippet.objects.get(pk=pk)
-    except Snippet.DoesNotExist:
+        Snippet = snippet.objects.get(pk=pk)
+    except snippet.DoesNotExist:
         return HttpResponse(status=404)
 
     if request.method == 'GET':
-        serializer = SnippetSerializer(snippet)
+        serializer = SnippetSerializer(Snippet)
         return JsonResponse(serializer.data)
 
     if request.method == 'PUT':
         data = JSONParser().parse(request)
-        serializer = SnippetSerializer(snippet, data=data)
+        serializer = SnippetSerializer(Snippet, data=data)
         if serializer.is_valid():
             return JsonResponse(serializer.data)  # come back here to see what happens with a staus http there like above. 
         return JsonResponse(serializer.errors, status=400)
 
     elif request.method == 'DELETE':
-        snippet.delete()
+        Snippet.delete()
         return HttpResponse(status=204)
 
